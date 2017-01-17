@@ -8,14 +8,14 @@ LFM_1b_users <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/LF
 
 names(LFM_1b_users) = c("user-id", "country", "age", "gender", "playcount", "registered timestamp")
 
-nUsers = length(unique(LFM_1b_users$user_id))
+nUsers = length(unique(LFM_1b_users$`user-id`))
 
 size_sample = 1000
 sample_indexes = floor(runif(size_sample, min=1, max=nUsers+1))
 
-sample = LFM_1b_users[sample_indexes,"user_id"]
+sample = LFM_1b_users[sample_indexes,"user-id"]
 
-sample = sort(sample$user_id)
+sample = sort(sample$`user-id`)
 
 write.table(sample, "sample_users.txt", sep = "\t", col.names = FALSE, row.names = FALSE)
 
@@ -55,4 +55,4 @@ LFM = merge(LFM, LFM_1b_albums, by = "album-id")
 
 LFM$`track-id` = NULL
 
-write.table(LFM, "LFM-treated.txt",row.names = FALSE, col.names = TRUE, sep = "\t")
+write.table(LFM, "~/Documentos/Experimento Doutorado/bases de dados/LFM/LFM-treated.txt",row.names = FALSE, col.names = TRUE, sep = "\t")
