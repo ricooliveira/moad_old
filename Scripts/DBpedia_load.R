@@ -70,6 +70,13 @@ Artist.genres[,2] = NULL
 # write text file with artists and its genres
 write.table(Artist.genres, "~/Documentos/Experimento Doutorado/bases de dados/DBpedia/DBpedia Artist_genres.txt",row.names = FALSE, col.names = TRUE, sep = "\t")
 
+# Exclude genres that contain only one artist
+
+quant = c(2)
+for (i in 2:ncol(Artist.genres)){
+  quant = c(quant,sum(Artist.genres[,i]))
+}
+Artist.genres = Artist.genres[,-which(quant<2)]
 
 # lods <- vector("list", nrow(Artist))
 # for (i in 1:nrow(Artist)){
