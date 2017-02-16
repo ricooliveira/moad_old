@@ -59,10 +59,7 @@ LFM.train <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/exper
 quant.users = length(unique(LFM.train$`user-id`))
 artists.listenned = unique(LFM.train$`artist-name`)
 LFM.affinity = as.data.frame(matrix(0L, quant.users, length(artists.listenned)))
-# row.names(LFM.affinity) = unique(LFM_treated$`user-id`)
-LFM.affinity = cbind(unique(LFM.train$`user-id`),LFM.affinity)
-# user.ids = unique(LFM_treated$`user-id`)
-colnames(LFM.affinity) = c("user", artists.listenned)
+colnames(LFM.affinity) = c(artists.listenned)
 
 byUserArtist = group_by(LFM.train, `user-id`, `artist-name`)
 sumArtistsUser = summarise(byUserArtist,total = n())

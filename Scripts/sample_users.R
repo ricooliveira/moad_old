@@ -1,4 +1,9 @@
 library(readr)
+library(data.table)
+
+######################### CONSTANTS #########################
+
+size_sample = 1000
 
 ######################### USERS #########################
 
@@ -10,14 +15,13 @@ names(LFM_1b_users) = c("user-id", "country", "age", "gender", "playcount", "reg
 
 nUsers = length(unique(LFM_1b_users$`user-id`))
 
-size_sample = 1000
 sample_indexes = floor(runif(size_sample, min=1, max=nUsers+1))
 
 sample = LFM_1b_users[sample_indexes,"user-id"]
 
 sample = sort(sample$`user-id`)
 
-write.table(sample, "sample_users.txt", sep = "\t", col.names = FALSE, row.names = FALSE)
+write.table(sample, "~/Documentos/Experimento Doutorado/bases de dados/LFM/sample_users.txt", sep = "\t", col.names = FALSE, row.names = FALSE)
 
 ######################### LEs #########################
 
@@ -55,4 +59,4 @@ LFM = merge(LFM, LFM_1b_albums, by = "album-id")
 
 LFM$`track-id` = NULL
 
-write.table(LFM, "~/Documentos/Experimento Doutorado/bases de dados/LFM/LFM-treated.txt",row.names = FALSE, col.names = TRUE, sep = "\t")
+data.table::fwrite(LFM, "~/Documentos/Experimento Doutorado/bases de dados/LFM/LFM-treated.txt",row.names = FALSE, col.names = TRUE, sep = ";")
