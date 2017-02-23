@@ -10,23 +10,26 @@ TOPN_RERANK = 50
 ########################## LOAD ##########################
 
 # Last.fm load
-LFM_treated <- fread("~/Documentos/Experimento Doutorado/bases de dados/LFM/LFM-treated.txt", sep=";")
+# LFM_treated <- fread("~/Documentos/Experimento Doutorado/bases de dados/LFM/LFM-treated.txt", sep=";")
+LFM.artists.available <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM.artists.available.txt", 
+                               sep="\t",
+                               verbose = TRUE)
 
 ######################################################
 
 # Spliting LFM data in train and test data (80% / 20%)
 
-LFM_treated = LFM_treated[order(LFM_treated$`user-id`, LFM_treated$timestamp),]
+LFM.artists.available = LFM.artists.available[order(LFM.artists.available$`user-id`, LFM.artists.available$timestamp),]
 percent.train = 0.8
 
 LFM.train = data.frame()
 LFM.test = data.frame()
 
-quant.users = length(unique(LFM_treated$`user-id`))
-for (u in unique(LFM_treated$`user-id`)){
+quant.users = length(unique(LFM.artists.available$`user-id`))
+for (u in unique(LFM.artists.available$`user-id`)){
   print(quant.users)
   quant.users = quant.users - 1
-  LFM.prov = LFM_treated[which(LFM_treated$`user-id` == u), ]
+  LFM.prov = LFM.artists.available[which(LFM.artists.available$`user-id` == u), ]
   size = nrow(LFM.prov)
   size.train = round(size * percent.train)
   LFM.train = bind_rows(LFM.train,LFM.prov[1:size.train,])
@@ -34,16 +37,16 @@ for (u in unique(LFM_treated$`user-id`)){
 }
 
 fwrite(LFM.train, "~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_train.txt", 
-       row.names = FALSE, col.names = TRUE, sep = ";", na = "")
+       row.names = FALSE, col.names = TRUE, sep = "\t", na = "")
 
 fwrite(LFM.test, "~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_test.txt", 
-       row.names = FALSE, col.names = TRUE, sep = ";", na = "")
+       row.names = FALSE, col.names = TRUE, sep = "\t", na = "")
 
 ######################################################
 
-LFM.train <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_train.txt", sep=";", na.strings = "", verbose = TRUE)
+LFM.train <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_train.txt", sep="\t", na.strings = "", verbose = TRUE)
                         
-# Transforming LFM_treated in a rating matrix - Artists rating
+# Transforming LFM.artists.available in a rating matrix - Artists rating
 
 users = unique(LFM.train$`user-id`)
 quant.users = length(unique(LFM.train$`user-id`))
@@ -105,9 +108,9 @@ for(i in 1:length(users)){
 # 
 # #Teste menos dados
 # for(x in 1:9480){
-#   LFM_treated.part = LFM_treated[((x-1)*1000+1):(1000*x),]
+#   LFM.artists.available.part = LFM.artists.available[((x-1)*1000+1):(1000*x),]
 #   print(x)
-#   LEs.lj.partial = left_join(LFM_treated.part, mb_albums, by = c("artist-name" = "artist.name"))
+#   LEs.lj.partial = left_join(LFM.artists.available.part, mb_albums, by = c("artist-name" = "artist.name"))
 #   if (x == 1){
 #     LEs.lj = LEs.lj.partial
 #   }else{
@@ -118,16 +121,16 @@ for(i in 1:length(users)){
 # ######################################################
 # # Merge LFM and DBpedia
 # 
-# #LEs = merge(DBpedia_Artist_genres, LFM_treated, by.x = "Artist", by.y = "artist-name")
-# #LEs.inner = inner_join(LFM_treated, DBpedia_Artist_genres, by = c("artist-name" = "Artist"))
-# #LEs.inner = inner_join(LFM_treated, mb_albums, by = c("artist-name" == "artist.name"))
+# #LEs = merge(DBpedia_Artist_genres, LFM.artists.available, by.x = "Artist", by.y = "artist-name")
+# #LEs.inner = inner_join(LFM.artists.available, DBpedia_Artist_genres, by = c("artist-name" = "Artist"))
+# #LEs.inner = inner_join(LFM.artists.available, mb_albums, by = c("artist-name" == "artist.name"))
 # 
 # # Calculate the number of cores
 # no_cores <- detectCores() - 1
 # # Initiate cluster
 # cl <- makeCluster(no_cores)
 # 
-# parLapply(cl, LFM_treated, FUN = inner_join, mb_albums, by = c("artist-name" == "artist.name"))
+# parLapply(cl, LFM.artists.available, FUN = inner_join, mb_albums, by = c("artist-name" == "artist.name"))
 
 # # Exemplos de obtenção de recomendação
 # 

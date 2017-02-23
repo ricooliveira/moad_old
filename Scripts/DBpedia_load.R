@@ -59,7 +59,7 @@ genres.all.columns = data.frame(matrix(0,ncol = genres.total, nrow = nrow(Artist
 names(genres.all.columns) = genres.all$Items
 
 # fill the genre columns of each artist
-Artist.genres = bind_cols(Artist,genres.all.columns)
+Artist.genres = bind_cols(Artist,genres.all.columns) # Substituir pela operação tidy, pacote reshape2
 for (i in 1:nrow(Artist)) {
   for(j in 1:nrow(genres[[i]])) {
     Artist.genres[i,as.character(genres[[i]][j,1])] = 1
