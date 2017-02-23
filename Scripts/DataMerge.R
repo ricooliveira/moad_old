@@ -1,4 +1,5 @@
 library(data.table)
+library(dplyr)
 
 ########################################## Load files ##########################################
 
@@ -33,18 +34,22 @@ MB_artists = as.data.frame(MB_artists)
 colnames(MB_artists) = c("area", "id", "Artist", "begin_date_year", "end_date_year", "type", "gender", 
                          "ended", "area.name", "area_type.name")
 
+# Merge Music Brainz and DBpedia
+
+artist.data = inner_join(MB_artists, DBpedia_Artist_genres, by = "Artist")
+
 # Remove duplicated artists from Music Brainz - pick the one with more attributes
 
-mb.artists.duplicated = MB_artists[which(duplicated(MB_artists$Artist)),]
-mb.duplicated.names = unique(mb.artists.duplicated$Artist)
-nrow(MB_artists) - nrow(mb.artists.duplicated)
+artist.data.duplicated = artist.data[which(duplicated(artist.data$Artist)),]
+artist.data.duplicated.names = unique(artist.data.duplicated$Artist)
+nrow(artist.data) - nrow(artist.data.duplicated)
 
 x = 0
-print(length(mb.duplicated.names))
-for(i in mb.duplicated.names){ #replace this terrible code snippet
+print(length(artist.data.duplicated.names))
+for(i in artist.data.duplicated.names){ #replace this terrible code snippet
   x = x + 1
   print(x)
-  df = MB_artists[which(MB_artists$Artist == i),]
+  df = artist.data[which(artist.data$Artist == i),]
   attrib = 0
   for(j in 1:nrow(df)){
     attrib.line = sum(!is.na(df[j,]))
@@ -54,12 +59,8 @@ for(i in mb.duplicated.names){ #replace this terrible code snippet
     }
   }
   ids.out = setdiff(c(df$id),id)
-  MB_artists = MB_artists[-which(MB_artists$id %in% ids.out),]
+  artist.data = artist.data[-which(artist.data$id %in% ids.out),]
 }
-
-# Merge Music Brainz and DBpedia
-
-artist.data = inner_join(MB_artists, DBpedia_Artist_genres, by = "Artist")
 
 # Write data
 
