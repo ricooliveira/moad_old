@@ -82,7 +82,7 @@ Rec.model = Recommender(affinity.matrix,
 ubcf.top.rerank = vector("list",length(users))
 
 # Generate UBCF Top 50 Recommendations
-for(i in 1:length(users)){
+for(i in 1:length(users)){ # refazer pra tirar o laço. Usar stack. Data frame transforma elementos em fatores, atrapalha o stack
   print(i)
   recommended.items <- predict(Rec.model, affinity.matrix[as.character(users[i]),], n = TOPN_RERANK)
   ubcf.top.rerank[[i]] = as.data.frame(as(recommended.items, "list"))
