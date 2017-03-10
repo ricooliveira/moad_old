@@ -31,8 +31,7 @@ MB_artists <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimen
                     verbose = TRUE,
                     na.strings = "")
 MB_artists = as.data.frame(MB_artists)
-colnames(MB_artists) = c("area", "id", "Artist", "begin_date_year", "end_date_year", "type", "gender", 
-                         "ended", "area.name", "area_type.name")
+colnames(MB_artists) = c("id", "Artist", "begin_date_year", "end_date_year", "type", "area", "gender", "ended")
 
 # Merge Music Brainz and DBpedia
 
@@ -62,16 +61,25 @@ for(i in artist.data.duplicated.names){ #replace this terrible code snippet
   artist.data = artist.data[-which(artist.data$id %in% ids.out),]
 }
 
+# Filter artists with no metadata in Music Brainz
+
+artist.data.noNA = artist.data[which(!is.na(artist.data$begin_date_year)),]
+artist.data.noNA = artist.data.noNA[which(!is.na(artist.data.noNA$area)),]
+artist.data.noNA = artist.data.noNA[which(!is.na(artist.data.noNA$type)),]
+
 # Write data
 
-fwrite(artist.data, "~/Documentos/Experimento Doutorado/bases de dados/experimento/artist.data.txt",row.names = FALSE, col.names = TRUE, sep = ";")
+fwrite(artist.data.noNA, "~/Documentos/Experimento Doutorado/bases de dados/experimento/artist.data.txt",
+       row.names = FALSE, 
+       col.names = TRUE, 
+       sep = ";")
 
 # LFM load and filter - ignore artists with no data available
 
 LFM <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM-treated.txt", 
                     sep = "\t", 
                     verbose = TRUE)
-artists.available = unique(artist.data$Artist)
+artists.available = unique(artist.data.noNA$Artist)
 LFM.artists.available = LFM[which(LFM$`artist-name` %in% artists.available),]
 
 fwrite(LFM.artists.available, "~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM.artists.available.txt",row.names = FALSE, col.names = TRUE, sep = "\t", quote = TRUE)

@@ -93,7 +93,8 @@ for(i in 1:length(users)){
   print(i)
   df.user = as.data.frame(matrix(as.character(users[i]),TOPN_RERANK,1))
   df.user = bind_cols(df.user, ubcf.top.rerank[[i]])
-  fwrite(df.user, "~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top50.csv",row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE, quote = TRUE)
+  fwrite(df.user, "~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top50.csv",
+         row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE, quote = TRUE)
 }
 
 # Write UBCF Top 10 Recommendations
@@ -101,7 +102,8 @@ for(i in 1:length(users)){
   print(i)
   df.user = as.data.frame(matrix(as.character(users[i]),TOPN,1))
   df.user = bind_cols(df.user, as.data.frame(ubcf.top.rerank[[i]][1:10,]))
-  fwrite(df.user, "~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top10.csv",row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE, quote = TRUE)
+  fwrite(df.user, "~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top10.csv",
+         row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE, quote = TRUE)
 }
 
 ############################################ G A R B A G E ######################################################

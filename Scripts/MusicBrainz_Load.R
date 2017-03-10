@@ -176,32 +176,33 @@ artist[artist[,"ended_char"] == "t","ended"] = TRUE
 artist = artist[,c(1, 3, 5, 8, 11, 12, 13, 20)]
 
 ################################### AREA ###################################
+# The area data is not necessary, the ids will be treated as the classes for the categorical attribute
 
-area <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/area", 
-                   "\t", 
-                   escape_double = FALSE, 
-                   col_names = FALSE, 
-                   trim_ws = TRUE,
-                   na = "\\N")
-names(area) = c("area.id", "area.gid", "area.name", "area.type", "area.edits_pending", "area.last_updated", "area.begin_date_year", 
-                "area.begin_date_month", "area.begin_date_day", "area.end_date_year", "area.end_date_month", 
-                "area.end_date_day", "area.ended", "area.comment")
-area = area[,c(1, 3, 4)]
-artist = merge(artist, area, by.x = "area", by.y = "area.id", all.x = TRUE)
+# area <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/area", 
+#                    "\t", 
+#                    escape_double = FALSE, 
+#                    col_names = FALSE, 
+#                    trim_ws = TRUE,
+#                    na = "\\N")
+# names(area) = c("area.id", "area.gid", "area.name", "area.type", "area.edits_pending", "area.last_updated", "area.begin_date_year", 
+#                 "area.begin_date_month", "area.begin_date_day", "area.end_date_year", "area.end_date_month", 
+#                 "area.end_date_day", "area.ended", "area.comment")
+# area = area[,c(1, 3, 4)]
+# artist = merge(artist, area, by.x = "area", by.y = "area.id", all.x = TRUE)
 
 
-area_type <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/area_type", 
-                        "\t", 
-                        escape_double = FALSE, 
-                        col_names = FALSE, 
-                        trim_ws = TRUE,
-                        na = "\\N")
-names(area_type) = c("area_type.id", "area_type.name", "area_type.parent", "area_type.child_order", "area_type.description",
-                     "area_type.gid")
-area_type = area_type[,c(1,2)]
-artist = merge(artist, area_type, by.x = "area.type", by.y = "area_type.id", all.x = TRUE)
-artist$area.type = NULL
-artist$artist.area = NULL
+# area_type <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/area_type", 
+#                         "\t", 
+#                         escape_double = FALSE, 
+#                         col_names = FALSE, 
+#                         trim_ws = TRUE,
+#                         na = "\\N")
+# names(area_type) = c("area_type.id", "area_type.name", "area_type.parent", "area_type.child_order", "area_type.description",
+#                      "area_type.gid")
+# area_type = area_type[,c(1,2)]
+# artist = merge(artist, area_type, by.x = "area.type", by.y = "area_type.id", all.x = TRUE)
+# artist$area.type = NULL
+# artist$artist.area = NULL
 
 ################################### WRITING ###################################
 

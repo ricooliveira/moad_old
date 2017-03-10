@@ -7,13 +7,13 @@ library(nomclust)
 
 # Precision
 
-precision = function(list.elements, data.test, TOPN){
-  return(length(list.elements[which(list.elements$artist %in% data.test$`artist-name`),]))
+precision = function(list.elements, data.test, TOPN){ # list.elements can not have more than one column
+  return(length(list.elements[which(list.elements$artist %in% data.test$`artist-name`),])/TOPN)
 }
 
 # Intra List Diversity Metric (ILD)
 
-ILD = function(list.ubcf,artist.data){ 
+ILD = function(list.ubcf,artist.data){  
   k=nrow(list.ubcf)
   if(k > 1){
     df = artist.data[artist.data$Artist %in% list.ubcf$artist,]
