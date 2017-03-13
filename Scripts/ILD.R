@@ -6,6 +6,7 @@ library(nomclust)
 ########################## CONSTANTS ##########################
 TOPN = 10
 TOPN_RERANK = 50
+address <- "~/Documents/experimento_doutorado/"
 
 ########################################## Functions ##########################################
 
@@ -44,7 +45,7 @@ pearson.correlation = function(candidate,list.ubcf){
 
 ########################################## DATA LOAD ##########################################
 
-artist.data <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/artist.data.txt", 
+artist.data <- fread(paste0(address,"bases de dados/experimento/artist.data.txt"), 
                     sep = ";", 
                     verbose = TRUE,
                     header = TRUE)
@@ -62,7 +63,7 @@ for(i in col){
 
 # Recommendations load
 
-ubcf.top50 <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top50.csv", 
+ubcf.top50 <- fread(paste0(address,"bases de dados/experimento/sample1000.ubcf.top50.csv"), 
                     sep = ";", 
                     verbose = TRUE,
                     header = FALSE,
@@ -73,7 +74,7 @@ ubcf.top50 = as.data.frame(ubcf.top50)
 
 aspects <- vector(mode="list", length=4)
 names(aspects) <- c("Contemporaneity", "Gender", "Locality", "Genre")
-aspects[[1]] <- 4:5; aspects[[2]] <- 6:7; aspects[[3]] <- 1; aspects[[4]] <- 11:ncol(artist.data)
+aspects[[1]] <- 3:4; aspects[[2]] <- 5:7; aspects[[3]] <- 6; aspects[[4]] <- 7:ncol(artist.data)
 
 ########################################## Topic Diversification ##########################################
 

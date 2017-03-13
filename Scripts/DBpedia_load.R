@@ -1,5 +1,7 @@
-library(readr)
 library(dplyr)
+
+########################## CONSTANTS ##########################
+address <- "~/Documents/experimento_doutorado/"
 
 ######################### FUNCTION ########################
 
@@ -19,7 +21,7 @@ dismemberObjects = function(str) {
 
 ################################### MusicalArtist ###################################
 
-MusicalArtist = read.csv("~/Documentos/Experimento Doutorado/bases de dados/DBpedia/MusicalArtist.csv", header=TRUE, na.strings="NULL", stringsAsFactors=FALSE, sep = ",")
+MusicalArtist = read.csv(paste0(address,"bases de dados/DBpedia/MusicalArtist.csv"), header=TRUE, na.strings="NULL", stringsAsFactors=FALSE, sep = ",")
 MusicalArtist.Origin = MusicalArtist[,c(2,26)]
 names(MusicalArtist.Origin) = c("Artist","Origin")
 MusicalArtist = MusicalArtist[,c(2,48)]

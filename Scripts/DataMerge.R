@@ -1,6 +1,9 @@
 library(data.table)
 library(dplyr)
 
+########################## CONSTANTS ##########################
+address <- "~/Documents/experimento_doutorado/"
+
 ########################################## Load files ##########################################
 
 # Music brainz albums load
@@ -11,7 +14,7 @@ library(dplyr)
 # MB_albums = as.data.frame(MB_albums)
 
 # DBpedia load
-DBpedia_Artist_genres <- fread("~/Documentos/Experimento Doutorado/bases de dados/DBpedia/DBpedia Artist_genres.txt",
+DBpedia_Artist_genres <- fread(paste0(address,"bases de dados/DBpedia/DBpedia Artist_genres.txt"),
                                sep="\t", 
                                verbose = TRUE)
 DBpedia_Artist_genres = as.data.frame(DBpedia_Artist_genres)
@@ -26,7 +29,7 @@ DBpedia_Artist_genres = DBpedia_Artist_genres[,-which(quant<min.artists)]
 
 # Music Brainz artists load
 
-MB_artists <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/mb_artists.txt", 
+MB_artists <- fread(paste0(address,"bases de dados/experimento/mb_artists.txt"), 
                     sep = "\t", 
                     verbose = TRUE,
                     na.strings = "")
@@ -69,18 +72,35 @@ artist.data.noNA = artist.data.noNA[which(!is.na(artist.data.noNA$type)),]
 
 # Write data
 
-fwrite(artist.data.noNA, "~/Documentos/Experimento Doutorado/bases de dados/experimento/artist.data.txt",
+fwrite(artist.data.noNA, paste0(address,"bases de dados/experimento/artist.data.txt"),
        row.names = FALSE, 
        col.names = TRUE, 
        sep = ";")
 
 # LFM load and filter - ignore artists with no data available
 
-LFM <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM-treated.txt", 
+LFM <- fread(paste0(address,"bases de dados/experimento/LFM-treated.txt"), 
                     sep = "\t", 
                     verbose = TRUE)
 artists.available = unique(artist.data.noNA$Artist)
 LFM.artists.available = LFM[which(LFM$`artist-name` %in% artists.available),]
 
-fwrite(LFM.artists.available, "~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM.artists.available.txt",row.names = FALSE, col.names = TRUE, sep = "\t", quote = TRUE)
+fwrite(LFM.artists.available, 
+       paste0(address,"bases de dados/experimento/LFM.artists.available.txt"),
+       row.names = FALSE, col.names = TRUE, sep = "\t", quote = TRUE)
 
+
+###############
+# Only once in notebook
+
+# artist.data = fread(paste0(address,"bases de dados/experimento/artist.data.txt"),
+#                     sep = ";",
+#                     verbose = TRUE)
+# LFM = fread(paste0(address,"bases de dados/experimento/LFM.artists.available.txt"),
+#                     sep = "\t",
+#                     verbose = TRUE)
+# artists.available = unique(artist.data$Artist)
+# LFM.artists.available = LFM[which(LFM$`artist-name` %in% artists.available),]
+# fwrite(LFM.artists.available, 
+#        paste0(address,"bases de dados/experimento/LFM.artists.available.txt"),
+#        row.names = FALSE, col.names = TRUE, sep = "\t", quote = TRUE)

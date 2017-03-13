@@ -2,7 +2,7 @@ library(readr)
 library(data.table)
 
 ######################### CONSTANTS #########################
-
+address <- "~/Documents/experimento_doutorado/"
 size_sample = 1000
 
 ######################### USERS #########################

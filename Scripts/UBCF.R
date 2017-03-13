@@ -1,4 +1,3 @@
-library(readr)
 library(dplyr)
 library(data.table)
 library(recommenderlab)
@@ -6,12 +5,13 @@ library(recommenderlab)
 ########################## CONSTANTS ##########################
 TOPN = 10
 TOPN_RERANK = 50
+address <- "~/Documents/experimento_doutorado/"
 
 ########################## LOAD ##########################
 
 # Last.fm load
 # LFM_treated <- fread("~/Documentos/Experimento Doutorado/bases de dados/LFM/LFM-treated.txt", sep=";")
-LFM.artists.available <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM.artists.available.txt", 
+LFM.artists.available <- fread(paste0(address,"bases de dados/experimento/LFM.artists.available.txt"), 
                                sep="\t",
                                verbose = TRUE)
 
@@ -36,15 +36,18 @@ for (u in unique(LFM.artists.available$`user-id`)){
   LFM.test = bind_rows(LFM.test,LFM.prov[(size.train+1):size,])
 }
 
-fwrite(LFM.train, "~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_train.txt", 
+fwrite(LFM.train, 
+       paste0(address,"bases de dados/experimento/LFM_train.txt"), 
        row.names = FALSE, col.names = TRUE, sep = "\t", na = "")
 
-fwrite(LFM.test, "~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_test.txt", 
+fwrite(LFM.test,
+       paste0(address,"bases de dados/experimento/LFM_test.txt"), 
        row.names = FALSE, col.names = TRUE, sep = "\t", na = "")
 
 ######################################################
 
-LFM.train <- fread("~/Documentos/Experimento Doutorado/bases de dados/experimento/LFM_train.txt", sep="\t", na.strings = "", verbose = TRUE)
+LFM.train <- fread(paste0(address,"bases de dados/experimento/LFM_train.txt"),
+                   sep="\t", na.strings = "", verbose = TRUE)
                         
 # Transforming LFM.artists.available in a rating matrix - Artists rating
 
@@ -93,7 +96,8 @@ for(i in 1:length(users)){
   print(i)
   df.user = as.data.frame(matrix(as.character(users[i]),TOPN_RERANK,1))
   df.user = bind_cols(df.user, ubcf.top.rerank[[i]])
-  fwrite(df.user, "~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top50.csv",
+  fwrite(df.user, 
+         paste0(address,"bases de dados/experimento/sample1000.ubcf.top50.csv"),
          row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE, quote = TRUE)
 }
 
@@ -102,7 +106,8 @@ for(i in 1:length(users)){
   print(i)
   df.user = as.data.frame(matrix(as.character(users[i]),TOPN,1))
   df.user = bind_cols(df.user, as.data.frame(ubcf.top.rerank[[i]][1:10,]))
-  fwrite(df.user, "~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.ubcf.top10.csv",
+  fwrite(df.user, 
+         paste0(address,"bases de dados/experimento/sample1000.ubcf.top10.csv"),
          row.names = FALSE, col.names = FALSE, sep = ";", append = TRUE, quote = TRUE)
 }
 

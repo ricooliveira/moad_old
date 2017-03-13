@@ -1,6 +1,9 @@
 library(readr)
 library(data.table)
 
+########################## CONSTANTS ##########################
+address <- "~/Documents/experimento_doutorado/"
+
 ################################### RELEASE ###################################
 
 release <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/release", 
@@ -162,17 +165,22 @@ write.table(albums, "~/Documentos/Experimento Doutorado/bases de dados/experimen
 ########################## Artist Load (no album) #############################
 ###############################################################################
 
-artist <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/artist", 
-                     "\t", 
-                     escape_double = FALSE, 
-                     col_names = FALSE, 
-                     trim_ws = TRUE,
-                     na = "\\N")
+artist = fread(paste0(address,"bases de dados/MusicBrainz/mbdump/artist"),
+               sep="\t", 
+               verbose = TRUE,
+               na.strings = "\\N")
+
+# artist <- read_delim("~/Documentos/Experimento Doutorado/bases de dados/MusicBrainz/mbdump/artist", 
+#                      "\t", 
+#                      escape_double = FALSE, 
+#                      col_names = FALSE, 
+#                      trim_ws = TRUE,
+#                      na = "\\N")
 names(artist) = c("id", "gid", "name", "sort_name", "begin_date_year", "begin_date_month", "begin_date_day", "end_date_year",
                   "end_date_month", "end_date_day", "type", "area", "gender", "comment", "edits_pending", "last_updated",
                   "ended_char", "begin_area", "end_area")
-artist$ended = FALSE
-artist[artist[,"ended_char"] == "t","ended"] = TRUE
+
+artist$ended = artist[,"ended_char"] == "t"
 artist = artist[,c(1, 3, 5, 8, 11, 12, 13, 20)]
 
 ################################### AREA ###################################
@@ -206,5 +214,6 @@ artist = artist[,c(1, 3, 5, 8, 11, 12, 13, 20)]
 
 ################################### WRITING ###################################
 
-fwrite(artist, "~/Documentos/Experimento Doutorado/bases de dados/experimento/mb_artists.txt", 
+fwrite(artist,
+       paste0(address,"bases de dados/experimento/mb_artists.txt"), 
        row.names = FALSE, col.names = TRUE, sep = "\t")
