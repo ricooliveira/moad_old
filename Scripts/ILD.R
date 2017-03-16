@@ -6,27 +6,47 @@ library(nomclust)
 ########################## CONSTANTS ##########################
 TOPN = 10
 TOPN_RERANK = 50
-address <- "~/Documents/experimento_doutorado/"
+address <- "~/Documentos/Experimento Doutorado/"
 
 ########################################## Functions ##########################################
 
 # Intra List Diversity Metric (ILD)
 
-ILD = function(list.ubcf,artist.data){ 
-  k=nrow(list.ubcf)
-  if(k > 1){
-    df = artist.data[artist.data$Artist %in% list.ubcf$artist,]
-    df$id = NULL
-    df$Artist = NULL
-    #similarity.matrix = eskin(df)
-    sum.dissimilarity = 0
-    for(i in 1:(nrow(list.ubcf)-1)){
-      for(j in (i+1):nrow(list.ubcf)){
-        sum.dissimilarity = sum.dissimilarity + (1 - as.numeric(pearson.correlation(df[i,],df[j,])))
-      }
+similarity.function.genre = function(data){
+  return(cosine(t(as.matrix(data))))
+}
+
+similarity.function.gender.locality = function(data){
+  n = nrow(data)
+  m = matrix(0L,n,n)
+  for(i in 1:n){
+    for(j in 1:n){
+      
     }
-    #dissimilarity.matrix = 1 - similarity.matrix
-    #sum.dissimilarity = sum(colSums(dissimilarity.matrix)) - k
+  }
+  return(iof(data))
+}
+
+similarity.function.contemporaneity = function(data){
+  n = nrow(data)
+  m = matrix(0L,n,n)
+  for(i in 1:n){
+    for(j in 1:n){
+      m[i,j] = (abs(data[i,"begin_date_year"] - data[j, "begin_date_year"])) / year.gap
+    }
+  }
+  return(1 - m)
+}
+
+ILD = function(data, similarity.function){
+  k=nrow(data)
+  if(k > 1){
+    #df$id = NULL
+    #df$Artist = NULL
+    sum.dissimilarity = 0
+    similarity.matrix = similarity.function(data)
+    dissimilarity.matrix = 1 - similarity.matrix
+    sum.dissimilarity = sum(colSums(dissimilarity.matrix)) - k
     return(sum.dissimilarity/(k*(k-1)))
   }else{
     return(0)
@@ -54,6 +74,11 @@ artist.data$ended = NULL
 artist.data$area.name = NULL
 artist.data$area_type.name = NULL
 
+# boundings for Contemporaneity
+earliest.year = min(artist.data$begin_date_year)
+latest.year = 2016L # the year the database was collected
+year.gap = latest.year = earliest.year
+
 # Input 0 in NA values
 
 col = c(1,4:7)
@@ -75,6 +100,46 @@ ubcf.top50 = as.data.frame(ubcf.top50)
 aspects <- vector(mode="list", length=4)
 names(aspects) <- c("Contemporaneity", "Gender", "Locality", "Genre")
 aspects[[1]] <- 3:4; aspects[[2]] <- 5:7; aspects[[3]] <- 6; aspects[[4]] <- 7:ncol(artist.data)
+
+#################### Calculate frequencies for IOF for Gender and Locality  ####################
+
+by.type = group_by(artist.data,type)
+by.gender = group_by(artist.data,gender)
+by.area = group_by(artist.data,area)
+
+freq.type = summarise(by.type, total = n())
+freq.gender = summarise(by.gender, total = n())
+freq.area = summarise(by.area, total = n())
+
+
+############################## Write IOF for Gender and Locality  ##############################
+
+# This information must be pre-computed for the use of frequencies in all the elements, not only the frequencies
+# on the recommended list
+
+# Very high processing time
+
+# start.time <- Sys.time()
+# df.iof.gender = artist.data[,aspects[[2]]]
+# iof.gender = iof(df.iof.gender)
+# end.time <- Sys.time()
+# time.taken <- end.time - start.time
+# time.taken
+# 
+# 
+# start.time <- Sys.time()
+# df.iof.locality = artist.data[,aspects[[3]]]
+# iof.locality = iof(df.iof.locality)
+# end.time <- Sys.time()
+# time.taken <- end.time - start.time
+# time.taken
+# 
+# fwrite(iof.gender,
+#        paste0(address,"bases de dados/experimento/iof.gender.txt"),
+#        row.names = FALSE, col.names = FALSE, sep = "\t", quote = FALSE)
+# fwrite(iof.locality,
+#        paste0(address,"bases de dados/experimento/iof.locality.txt"),
+#        row.names = FALSE, col.names = FALSE, sep = "\t", quote = FALSE)
 
 ########################################## Topic Diversification ##########################################
 
@@ -125,4 +190,12 @@ for(u in users){
 #   music.brainz = MB_artists[which(MB_artists$name == artist$artist.name),]
 #   artist = inner_join(music.brainz, DBpedia_Artist_genres, by = "Artist")
 #   return(artist)
+# }
+
+# code snipet for pearson correlation
+# sum.dissimilarity = 0
+# for(i in 1:(nrow(list.ubcf)-1)){ # this code snipet is used for pearson correlation
+#   for(j in (i+1):nrow(list.ubcf)){
+#     sum.dissimilarity = sum.dissimilarity + (1 - as.numeric(pearson.correlation(df[i,],df[j,])))
+#   }
 # }
