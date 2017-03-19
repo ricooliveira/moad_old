@@ -4,7 +4,7 @@ library(nsga2R)
 ################################ Constants ################################
 
 TOPN = 10
-address <- "~/Documentos/Experimento Doutorado/"
+address <- "~/Documents/experimento_doutorado/"
 
 ################################ Data Load ################################
 
@@ -19,7 +19,7 @@ artist.data$area_type.name = NULL
 
 # Input 0 in NA values
 
-col = c(1,4:7)
+col = c(3:7)
 for(i in col){
   artist.data[which(is.na(artist.data[,i])),i] = 0
 }
@@ -45,20 +45,18 @@ ubcf.top10 = as.data.frame(ubcf.top10)
 #                     col.names = c("user", "artist"))
 # td.top10 = as.data.frame(td.top10)
 
+
+data.train <- fread(paste0(address,"bases de dados/experimento/LFM_train.txt"), 
+                   sep = "\t", 
+                   verbose = TRUE,
+                   header = TRUE)
+data.train = as.data.frame(data.train)
+
 data.test <- fread(paste0(address,"bases de dados/experimento/LFM_test.txt"), 
                     sep = "\t", 
                     verbose = TRUE,
                     header = TRUE)
 data.test = as.data.frame(data.test)
-
-# IOF load
-iof.gender <- fread(paste0(address,"bases de dados/experimento/sample1000.ubcf.top10.csv"), 
-                    sep = ";", 
-                    verbose = TRUE,
-                    header = FALSE,
-                    col.names = c("user", "artist"))
-ubcf.top10 = as.data.frame(ubcf.top10)
-
 
 ################################ OBJECTIVE FUNCTION ################################
 
@@ -67,10 +65,10 @@ ubcf.top10 = as.data.frame(ubcf.top10)
 
 multi.objective = function(list.elements.index){
    size = length(list.elements.index)
-   list.elements = as.data.frame(artist.data[list.elements.index,"Artist"])
+   list.elements = as.data.frame(artist.data.new[list.elements.index,"Artist"])
    names(list.elements) = "artist"
    n = length(aspects.to.diversify)
-   df = artist.data[artist.data$Artist %in% list.elements$artist,]
+   df = artist.data.new[artist.data.new$Artist %in% list.elements$artist,]
    sum.ild = 0
    for(i in aspects.to.diversify){
      df.aspect = df[(aspects[[i]])]
@@ -82,7 +80,7 @@ multi.objective = function(list.elements.index){
      df.aspect = df[(aspects[[i]])]
      sum.ild = sum.ild + ILD(data = df.aspect, similarity.function = functions[[i]])
    }
-   y2 = 1 - (sum.ild / (length(aspects) - n))
+   y2 = 1 - (sum.ild / length(aspects.not.to.diversify))
    return(c(y1, y2))
 }
 
@@ -93,30 +91,38 @@ names(aspects) <- c("Contemporaneity", "Gender", "Locality", "Genre")
 aspects[[1]] <- 3:4; aspects[[2]] <- c(5,7); aspects[[3]] <- 6; aspects[[4]] <- 8:ncol(artist.data)
 functions <- vector(mode="list", length=4)
 names(functions) <- c("Contemporaneity", "Gender", "Locality", "Genre")
-functions[[1]] <- similarity.function.contemporaneity; functions[[2]] <- similarity.function.gender.locality
-functions[[3]] <- similarity.function.gender.locality; functions[[4]] <- similarity.function.genre
+functions[[1]] <- similarity.function.contemporaneity; functions[[2]] <- similarity.function.gender
+functions[[3]] <- similarity.function.locality; functions[[4]] <- similarity.function.genre
 
 ################################ NSGA-II ################################
 
 #setup
-user = ubcf.top10$user[21] # test user
-data.user = data.test[which(data.test$`user-id` == user),] # test data for specified user
+# user = ubcf.top10$user[21] # test user
 # aspects: 1 = "Contemporaneity", 2 = "Gender", 3 = "Locality", 4 = "Genre")
 aspects.to.diversify = c(1,2,3)
 aspects.not.to.diversify = c(4)
-#artist.data.aspects.to.diversify = artist.data[,c(1,2,aspects.to.diversify)]
-#artist.data.aspects.not.to.diversify = artist.data[,c(1,2,aspects.not.to.diversify)]
-TOPN = 10
 
 start.time <- Sys.time()
-results2 <- nsga2R(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN), upperBounds=rep(nrow(artist.data),TOPN),
-                  popSize=10, tourSize=2, generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
+users = unique(ubcf.top10$user)
+user = 0
+for(u in users){
+  user = user + 1; print(user)
+  artist.data.listenned = unique(data.train[which(data.train$`user-id` == u),]$`artist-name`)
+  artist.data.new = artist.data[-which(artist.data$Artist %in% artist.data.listenned),]
+  results <- nsga2R(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN), 
+                    upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2, 
+                    generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
+  df = bind_cols(as.data.frame(rep(u,TOPN)),
+                 as.data.frame(artist.data.new[results$parameters[1,],"Artist"]))
+  fwrite(df,
+         paste0(address,"bases de dados/experimento/sample1000.nsga.first.top10.div123.pop10.gen20.txt"),
+         col.names = FALSE, row.names = FALSE, quote = TRUE, append = TRUE)
+}
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 time.taken
 
 plot(results$objectives)
-results
 resultados = unique(results$parameters)
 objetivos = unique(results$objectives)
 #recommendation.list = artist.data

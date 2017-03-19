@@ -26,6 +26,7 @@ for (i in 2:ncol(DBpedia_Artist_genres)){
   quant = c(quant,sum(DBpedia_Artist_genres[,i]))
 }
 DBpedia_Artist_genres = DBpedia_Artist_genres[,-which(quant<min.artists)]
+DBpedia_Artist_genres = DBpedia_Artist_genres[-which(apply(DBpedia_Artist_genres[2:ncol(DBpedia_Artist_genres)],1,sum) == 0),]
 
 # Music Brainz artists load
 
@@ -44,7 +45,6 @@ artist.data = inner_join(MB_artists, DBpedia_Artist_genres, by = "Artist")
 
 artist.data.duplicated = artist.data[which(duplicated(artist.data$Artist)),]
 artist.data.duplicated.names = unique(artist.data.duplicated$Artist)
-nrow(artist.data) - nrow(artist.data.duplicated)
 
 x = 0
 print(length(artist.data.duplicated.names))
@@ -99,8 +99,8 @@ fwrite(LFM.artists.available,
 # LFM = fread(paste0(address,"bases de dados/experimento/LFM.artists.available.txt"),
 #                     sep = "\t",
 #                     verbose = TRUE)
-# artists.available = unique(artist.data$Artist)
+# artists.available = unique(artist.data.noNA$Artist)
 # LFM.artists.available = LFM[which(LFM$`artist-name` %in% artists.available),]
-# fwrite(LFM.artists.available, 
+# fwrite(LFM.artists.available,
 #        paste0(address,"bases de dados/experimento/LFM.artists.available.txt"),
 #        row.names = FALSE, col.names = TRUE, sep = "\t", quote = TRUE)

@@ -1,12 +1,12 @@
 library(dplyr)
 library(data.table)
 library(lsa)
-library(nomclust)
+#library(nomclust)
 
 ########################## CONSTANTS ##########################
 TOPN = 10
 TOPN_RERANK = 50
-address <- "~/Documentos/Experimento Doutorado/"
+address <- "~/Documents/experimento_doutorado/"
 
 ########################################## Functions ##########################################
 
@@ -16,15 +16,43 @@ similarity.function.genre = function(data){
   return(cosine(t(as.matrix(data))))
 }
 
-similarity.function.gender.locality = function(data){
+similarity.function.gender = function(data){
   n = nrow(data)
   m = matrix(0L,n,n)
   for(i in 1:n){
     for(j in 1:n){
-      
+      if(data[i,"gender"] == data[j,"gender"]){
+        v.gender = 1
+      } else {  
+        v.gender = 1 / (1 + log10(as.numeric(freq.gender[which(data[i,"gender"] == freq.gender$gender),"total"])) 
+                        * log10(as.numeric(freq.gender[which(data[j,"gender"] == freq.gender$gender),"total"])))
+      }
+      if(data[i,"type"] == data[j,"type"]){
+        v.type = 1
+      } else {  
+        v.type = 1 / (1 + log10(as.numeric(freq.type[which(data[i,"type"] == freq.type$type),"total"])) 
+                      * log10(as.numeric(freq.type[which(data[j,"type"] == freq.type$type),"total"])))
+      }
+      m[i,j] = (v.gender + v.type) / 2
     }
   }
-  return(iof(data))
+  return(m)
+}
+
+similarity.function.locality = function(data){
+  n = nrow(data)
+  m = matrix(0L,n,n)
+  for(i in 1:n){
+    for(j in 1:n){
+      if(data[i,"area"] == data[j,"area"]){
+        m[i,j] = 1
+      } else {  
+        m[i,j] = 1 / (1 + log10(as.numeric(freq.area[which(data[i,"area"] == freq.area$area),"total"])) 
+                        * log10(as.numeric(freq.area[which(data[j,"area"] == freq.area$area),"total"])))
+      }
+    }
+  }
+  return(m)
 }
 
 similarity.function.contemporaneity = function(data){
@@ -35,7 +63,7 @@ similarity.function.contemporaneity = function(data){
       m[i,j] = (abs(data[i,"begin_date_year"] - data[j, "begin_date_year"])) / year.gap
     }
   }
-  return(1 - m)
+  return(m)
 }
 
 ILD = function(data, similarity.function){
@@ -81,7 +109,7 @@ year.gap = latest.year = earliest.year
 
 # Input 0 in NA values
 
-col = c(1,4:7)
+col = c(3:7)
 for(i in col){
   artist.data[which(is.na(artist.data[,i])),i] = 0
 }
