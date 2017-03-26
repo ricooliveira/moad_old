@@ -29,6 +29,12 @@ earliest.year = min(artist.data$begin_date_year)
 latest.year = 2016L # the year the database was collected
 year.gap = latest.year = earliest.year
 
+# normalize begin_year
+for(i in 1:nrow(artist.data)){
+  artist.data[i, "begin_date_year"] = (artist.data[i, "begin_date_year"] - earliest.year) / year.gap
+  
+}
+
 # Recommendations load
 
 ubcf.top10 <- fread(paste0(address,"bases de dados/experimento/sample1000.ubcf.top10.csv"), 
@@ -38,12 +44,12 @@ ubcf.top10 <- fread(paste0(address,"bases de dados/experimento/sample1000.ubcf.t
                     col.names = c("user", "artist"))
 ubcf.top10 = as.data.frame(ubcf.top10)
 
-# td.top10 <- fread(paste0(address,"bases de dados/experimento/sample1000.topic-diversification.pearson.top10.txt"), 
-#                     sep = "\t", 
-#                     verbose = TRUE,
-#                     header = FALSE,
-#                     col.names = c("user", "artist"))
-# td.top10 = as.data.frame(td.top10)
+td.top10 <- fread(paste0(address,"bases de dados/experimento/sample1000.topic-diversification.top10.txt"),
+                    sep = "\t",
+                    verbose = TRUE,
+                    header = FALSE,
+                    col.names = c("user", "artist"))
+td.top10 = as.data.frame(td.top10)
 
 
 data.train <- fread(paste0(address,"bases de dados/experimento/LFM_train.txt"), 
@@ -72,15 +78,16 @@ multi.objective = function(list.elements.index){
    sum.ild = 0
    for(i in aspects.to.diversify){
      df.aspect = df[(aspects[[i]])]
-     sum.ild = sum.ild + ILD(data = df.aspect, similarity.function = functions[[i]])
+     sum.ild = sum.ild + ILD(data = df.aspect, similarity.function = similarity.functions[[i]])
    }
-   y1 = sum.ild / n
-   sum.ild = 0
+   y1 = (sum.ild / n)
+   
+   sum.dlh = 0
    for(i in aspects.not.to.diversify){
      df.aspect = df[(aspects[[i]])]
-     sum.ild = sum.ild + ILD(data = df.aspect, similarity.function = functions[[i]])
+     sum.dlh = sum.dlh + DLH(data = df.aspect, history = data.train.user[(aspects[[i]])], distance.function = distance.functions[[i]])
    }
-   y2 = 1 - (sum.ild / length(aspects.not.to.diversify))
+   y2 = 1 -(sum.dlh / length(aspects.not.to.diversify))
    return(c(y1, y2))
 }
 
@@ -89,15 +96,19 @@ multi.objective = function(list.elements.index){
 aspects <- vector(mode="list", length=4)
 names(aspects) <- c("Contemporaneity", "Gender", "Locality", "Genre")
 aspects[[1]] <- 3:4; aspects[[2]] <- c(5,7); aspects[[3]] <- 6; aspects[[4]] <- 8:ncol(artist.data)
-functions <- vector(mode="list", length=4)
-names(functions) <- c("Contemporaneity", "Gender", "Locality", "Genre")
-functions[[1]] <- similarity.function.contemporaneity; functions[[2]] <- similarity.function.gender
-functions[[3]] <- similarity.function.locality; functions[[4]] <- similarity.function.genre
+similarity.functions <- vector(mode="list", length=4)
+names(similarity.functions) <- c("Contemporaneity", "Gender", "Locality", "Genre")
+similarity.functions[[1]] <- similarity.function.contemporaneity; similarity.functions[[2]] <- similarity.function.gender
+similarity.functions[[3]] <- similarity.function.locality; similarity.functions[[4]] <- similarity.function.genre
+
+distance.functions <- vector(mode="list", length=4)
+names(distance.functions) <- c("Contemporaneity", "Gender", "Locality", "Genre")
+distance.functions[[1]] <- distance.function.contemporaneity; distance.functions[[2]] <- distance.function.gender
+distance.functions[[3]] <- distance.function.locality; distance.functions[[4]] <- distance.function.genre
 
 ################################ NSGA-II ################################
 
 #setup
-# user = ubcf.top10$user[21] # test user
 # aspects: 1 = "Contemporaneity", 2 = "Gender", 3 = "Locality", 4 = "Genre")
 aspects.to.diversify = c(1,2,3)
 aspects.not.to.diversify = c(4)
@@ -109,13 +120,23 @@ for(u in users){
   user = user + 1; print(user)
   artist.data.listenned = unique(data.train[which(data.train$`user-id` == u),]$`artist-name`)
   artist.data.new = artist.data[-which(artist.data$Artist %in% artist.data.listenned),]
-  results <- nsga2R(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN), 
-                    upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2, 
-                    generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
+  ubcf.index = which(artist.data$Artist %in% ubcf.top10[which(ubcf.top10$user == u),"artist"])
+  td.index = which(artist.data$Artist %in% as.data.frame(td.top10[which(td.top10$user == u),"artist"])[1:10,]) #adapted for eliminate duplicated recommendation
+
+  data.train.user = artist.data[artist.data$Artist %in% artist.data.listenned,]
+  
+  results1 <- nsga2R.altered.random(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
+                    upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
+                    generations=10, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
+  results2 <- nsga2R.altered(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
+                   upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
+                   generations=10, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3,
+                   ubcf.index, td.index)
+
   df = bind_cols(as.data.frame(rep(u,TOPN)),
-                 as.data.frame(artist.data.new[results$parameters[1,],"Artist"]))
+                 as.data.frame(artist.data.new[results$parameters[10,],"Artist"]))
   fwrite(df,
-         paste0(address,"bases de dados/experimento/sample1000.nsga.first.top10.div123.pop10.gen20.txt"),
+         paste0(address,"bases de dados/experimento/sample1000.nsga.first.top10.div123.pop10.gen10.txt"),
          col.names = FALSE, row.names = FALSE, quote = TRUE, append = TRUE)
 }
 end.time <- Sys.time()

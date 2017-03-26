@@ -60,7 +60,7 @@ similarity.function.contemporaneity = function(data){
   m = matrix(0L,n,n)
   for(i in 1:n){
     for(j in 1:n){
-      m[i,j] = (abs(data[i,"begin_date_year"] - data[j, "begin_date_year"])) / year.gap
+      m[i,j] = abs(data[i,"begin_date_year"] - data[j, "begin_date_year"])
     }
   }
   return(m)
@@ -79,6 +79,76 @@ ILD = function(data, similarity.function){
   }else{
     return(0)
   }
+}
+
+# Distance List History Metric (DLH)
+
+distance.function.genre = function(data, history){
+  sum.cosine = 0
+  for(i in 1:nrow(data)){
+    for(j in 1:nrow(history)){
+      sum.cosine = sum.cosine + cosine(data[i,], history[j,])
+    }
+  }
+  return(sum.cosine/(nrow(data) * nrow(history)))
+}
+
+distance.function.gender = function(data, history){
+  n = nrow(data)
+  m = nrow(history)
+  sum.iof = 0
+  for(i in 1:n){
+    for(j in 1:m){
+      if(data[i,"gender"] == history[j,"gender"]){
+        v.gender = 1
+      } else {  
+        v.gender = 1 / (1 + log10(as.numeric(freq.gender[which(data[i,"gender"] == freq.gender$gender),"total"])) 
+                        * log10(as.numeric(freq.gender[which(history[j,"gender"] == freq.gender$gender),"total"])))
+      }
+      if(data[i,"type"] == history[j,"type"]){
+        v.type = 1
+      } else {  
+        v.type = 1 / (1 + log10(as.numeric(freq.type[which(data[i,"type"] == freq.type$type),"total"])) 
+                      * log10(as.numeric(freq.type[which(history[j,"type"] == freq.type$type),"total"])))
+      }
+      sum.iof = sum.iof + ((v.gender + v.type) / 2)
+    }
+  }
+  return(sum.iof / (m * n))
+}
+
+distance.function.locality = function(data, history){
+  n = nrow(data)
+  m = nrow(history)
+  sum.iof = 0
+  for(i in 1:n){
+    for(j in 1:m){
+      if(data[i,"area"] == data[j,"area"]){
+        v.area = 1
+      } else {  
+        v.area = 1 / (1 + log10(as.numeric(freq.area[which(data[i,"area"] == freq.area$area),"total"])) 
+                      * log10(as.numeric(freq.area[which(history[j,"area"] == freq.area$area),"total"])))
+      }
+      sum.iof = sum.iof + v.area
+    }
+  }
+  return(sum.iof / (m * n))
+}
+
+distance.function.contemporaneity = function(data, history){
+  n = nrow(data)
+  m = nrow(history)
+  sum.contemporaneity = 0
+  for(i in 1:n){
+    for(j in 1:n){
+      sum.contemporaneity = sum.contemporaneity + abs(data[i,"begin_date_year"] - history[j, "begin_date_year"])
+    }
+  }
+  return(m)
+}
+
+DLH = function(data, history, distance.function){
+  return(distance.function(data, history))
 }
 
 # Pearson correlation
@@ -190,7 +260,8 @@ for(u in users){
     topic.diversification = bind_rows(topic.diversification,df.metadata[1,])
   }
   df.rec = df.rec[df.rec$artist %in% topic.diversification$Artist,]
-  fwrite(df.rec,"~/Documentos/Experimento Doutorado/bases de dados/experimento/sample1000.topic-diversification.top10.txt",
+  fwrite(df.rec,
+         paste0(address,"bases de dados/experimento/sample1000.topic-diversification.top10.txt"),
          row.names = FALSE, 
          col.names = FALSE, 
          sep = "\t", 
