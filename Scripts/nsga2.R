@@ -96,7 +96,6 @@ multi.objective = function(list.elements.index){
    start.time <- Sys.time()
    for(i in aspects.not.to.diversify){
      df.aspect = df[(aspects[[i]])]
-     start.time <- Sys.time()
      sum.dlh = sum.dlh + DLH(data = df.aspect, history = data.train.user[(aspects[[i]])], distance.function = distance.functions[[i]])
    }
    end.time <- Sys.time()
@@ -125,8 +124,8 @@ distance.functions[[3]] <- distance.function.locality; distance.functions[[4]] <
 
 #setup
 # aspects: 1 = "Contemporaneity", 2 = "Gender", 3 = "Locality", 4 = "Genre")
-aspects.to.diversify = c(1)
-aspects.not.to.diversify = c(2,3,4)
+aspects.to.diversify = c(4)
+aspects.not.to.diversify = c(1,2,3)
 
 start.time <- Sys.time()
 users = unique(ubcf.top10$user)
@@ -140,7 +139,7 @@ for(u in users){
 
   data.train.user = artist.data[artist.data$Artist %in% artist.data.listenned,]
   
-  start.time <- Sys.time()
+  #start.time <- Sys.time()
   # results <- nsga2R.altered.random(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
   #                   upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
   #                   generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
@@ -150,14 +149,17 @@ for(u in users){
               upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
               generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1, MuDistIdx=3,
               ubcf.index, td.index)
-  end.time <- Sys.time()
-  time.taken <- end.time - start.time
-  time.taken
+  # end.time <- Sys.time()
+  # time.taken <- end.time - start.time
+  # time.taken
+  
+  nondominated = (fastNonDominatedSorting(results$objectives))[[1]]
+  best.solution = which.max(results$objectives[nondominated,1]+results$objectives[nondominated,2])
   
   df = bind_cols(as.data.frame(rep(u,TOPN)),
-                 as.data.frame(artist.data.new[results$parameters[10,],"Artist"]))
+                 as.data.frame(artist.data.new[results$parameters[nondominated,][best.solution,],"Artist"]))
   fwrite(df,
-         paste0(address,"bases de dados/experimento/sample1000.nsga.top10.div1.pop10.gen20.txt"),
+         paste0(address,"bases de dados/experimento/resultados/sample1000.nsga.top10.div4.pop10.gen20.txt"),
          col.names = FALSE, row.names = FALSE, quote = TRUE, append = TRUE)
 }
 end.time <- Sys.time()
