@@ -6,7 +6,7 @@ library(lsa)
 ########################## CONSTANTS ##########################
 TOPN = 10
 TOPN_RERANK = 50
-address <- "~/Documents/experimento_doutorado/"
+address <- "~/Documentos/experimento_doutorado/"
 
 ########################################## Functions ##########################################
 
@@ -60,7 +60,7 @@ similarity.function.contemporaneity = function(data){
   m = matrix(0L,n,n)
   for(i in 1:n){
     for(j in 1:n){
-      m[i,j] = abs(data[i,"begin_date_year"] - data[j, "begin_date_year"])
+      m[i,j] = 1 - (abs(data[i,"begin_date_year"] - data[j, "begin_date_year"]))
     }
   }
   return(m)
@@ -74,7 +74,7 @@ ILD = function(data, similarity.function){
     sum.dissimilarity = 0
     similarity.matrix = similarity.function(data)
     dissimilarity.matrix = 1 - similarity.matrix
-    sum.dissimilarity = sum(colSums(dissimilarity.matrix)) - k
+    sum.dissimilarity = sum(colSums(dissimilarity.matrix))
     return(sum.dissimilarity/(k*(k-1)))
   }else{
     return(0)
@@ -84,55 +84,135 @@ ILD = function(data, similarity.function){
 # Distance List History Metric (DLH)
 
 distance.function.genre = function(data, history){
-  sum.cosine = 0
+  centroid = genre.centroids[which(genre.centroids$`user-id` == u),]
+  centroid$`user-id` = NULL
+  distance = 0
   for(i in 1:nrow(data)){
-    for(j in 1:nrow(history)){
-      sum.cosine = sum.cosine + cosine(data[i,], history[j,])
-    }
+    distance = distance + cosine(as.vector(t(data[1,])),as.vector(t(centroid)))
   }
-  return(sum.cosine/(nrow(data) * nrow(history)))
+  return(distance/nrow(data))
 }
 
 distance.function.gender = function(data, history){
-  n = nrow(data)
-  m = nrow(history)
-  sum.iof = 0
-  for(i in 1:n){
-    for(j in 1:m){
-      if(data[i,"gender"] == history[j,"gender"]){
-        v.gender = 1
-      } else {  
-        v.gender = 1 / (1 + log10(as.numeric(freq.gender[which(data[i,"gender"] == freq.gender$gender),"total"])) 
-                        * log10(as.numeric(freq.gender[which(history[j,"gender"] == freq.gender$gender),"total"])))
-      }
-      if(data[i,"type"] == history[j,"type"]){
-        v.type = 1
-      } else {  
-        v.type = 1 / (1 + log10(as.numeric(freq.type[which(data[i,"type"] == freq.type$type),"total"])) 
-                      * log10(as.numeric(freq.type[which(history[j,"type"] == freq.type$type),"total"])))
-      }
-      sum.iof = sum.iof + ((v.gender + v.type) / 2)
+  data.t <- as.data.frame(t(data))
+  history.t <- as.data.frame(t(history))
+  
+  my_correlation_2 <- function(h.col, d.col) {
+    # get aspects from artist
+    h.type <- h.col[1]
+    h.gender <- h.col[2]
+    
+    d.type <- d.col[1]
+    d.gender <- d.col[2]
+    
+    #init
+    v.gender = 1
+    v.type = 1
+    
+    # get global freq
+    h.gender.freq <- subset(freq.gender, freq.gender$gender == h.gender)$total
+    h.type.freq <- subset(freq.type, freq.type$type == h.type)$total
+    
+    d.gender.freq <- subset(freq.gender, freq.gender$gender == d.gender)$total
+    d.type.freq <- subset(freq.type, freq.type$type == d.type)$total
+    
+    # compute
+    if(h.gender != d.gender){
+      v.gender = 1 / (1 + log10(as.numeric(d.gender.freq)) * log10(as.numeric(h.gender.freq)))
     }
+    if(h.type != d.type){
+      v.type = 1 / (1 + log10(as.numeric(d.type.freq)) * log10(as.numeric(h.type.freq)))
+    }
+    ((v.gender + v.type) / 2)
   }
-  return(sum.iof / (m * n))
+  
+  
+  bl <- lapply(data.t, function(u){
+    lapply(history.t, function(v){
+      my_correlation_2(u,v) # Function with column from x and column from y as inputs
+    })
+  })
+  
+  return(mean(unlist(bl)))
+    # n = nrow(data)
+  # m = nrow(history)
+  # sum.iof = 0
+  # for(i in 1:n){
+  #   for(j in 1:m){
+  #     if(data[i,"gender"] == history[j,"gender"]){
+  #       v.gender = 1
+  #     } else {  
+  #       v.gender = 1 / (1 + log10(as.numeric(freq.gender[which(data[i,"gender"] == freq.gender$gender),"total"])) 
+  #                       * log10(as.numeric(freq.gender[which(history[j,"gender"] == freq.gender$gender),"total"])))
+  #     }
+  #     if(data[i,"type"] == history[j,"type"]){
+  #       v.type = 1
+  #     } else {  
+  #       v.type = 1 / (1 + log10(as.numeric(freq.type[which(data[i,"type"] == freq.type$type),"total"])) 
+  #                     * log10(as.numeric(freq.type[which(history[j,"type"] == freq.type$type),"total"])))
+  #     }
+  #     sum.iof = sum.iof + ((v.gender + v.type) / 2)
+  #   }
+  # }
+  # return(sum.iof / (m * n))
 }
 
 distance.function.locality = function(data, history){
-  n = nrow(data)
-  m = nrow(history)
-  sum.iof = 0
-  for(i in 1:n){
-    for(j in 1:m){
-      if(data[i,"area"] == data[j,"area"]){
-        v.area = 1
-      } else {  
-        v.area = 1 / (1 + log10(as.numeric(freq.area[which(data[i,"area"] == freq.area$area),"total"])) 
-                      * log10(as.numeric(freq.area[which(history[j,"area"] == freq.area$area),"total"])))
-      }
-      sum.iof = sum.iof + v.area
+  data.t <- as.data.frame(t(data))
+  history.t <- as.data.frame(t(history))
+
+  my_correlation.area <- function(h.col, d.col) {
+    # get aspects from artist
+    h.area <- h.col[1]
+    #h.gender <- h.col[2]
+
+    d.area <- d.col[1]
+    #d.gender <- d.col[2]
+
+    #init
+    #v.gender = 1
+    v.area = 1
+
+    # get global freq
+    # h.gender.freq <- subset(freq.gender, freq.gender$gender == h.gender)$total
+    h.area.freq <- subset(freq.area, freq.area$area == h.area)$total
+
+    # d.gender.freq <- subset(freq.gender, freq.gender$gender == d.gender)$total
+    d.area.freq <- subset(freq.area, freq.area$area == d.area)$total
+
+    # compute
+    # if(h.gender != d.gender){
+    #   v.gender = 1 / (1 + log10(as.numeric(d.gender.freq)) * log10(as.numeric(h.gender.freq)))
+    # }
+    if(h.area != d.area){
+      v.area = 1 / (1 + log10(as.numeric(d.area.freq)) * log10(as.numeric(h.area.freq)))
     }
+    return(v.area)
   }
-  return(sum.iof / (m * n))
+
+
+  bl <- lapply(data.t, function(u){
+    lapply(history.t, function(v){
+      my_correlation.area(u,v) # Function with column from x and column from y as inputs
+    })
+  })
+
+  return(mean(unlist(bl)))
+  # n = nrow(data)
+  # m = nrow(history)
+  # sum.iof = 0
+  # for(i in 1:n){
+  #   for(j in 1:m){
+  #     if(data[i,"area"] == history[j,"area"]){
+  #       v.area = 1
+  #     } else {
+  #       v.area = 1 / (1 + log10(as.numeric(freq.area[which(data[i,"area"] == freq.area$area),"total"]))
+  #                     * log10(as.numeric(freq.area[which(history[j,"area"] == freq.area$area),"total"])))
+  #     }
+  #     sum.iof = sum.iof + v.area
+  #   }
+  # }
+  # return(sum.iof / (m * n))
 }
 
 distance.function.contemporaneity = function(data, history){
@@ -144,7 +224,7 @@ distance.function.contemporaneity = function(data, history){
       sum.contemporaneity = sum.contemporaneity + abs(data[i,"begin_date_year"] - history[j, "begin_date_year"])
     }
   }
-  return(m)
+  return(sum.contemporaneity / (m * n))
 }
 
 DLH = function(data, history, distance.function){

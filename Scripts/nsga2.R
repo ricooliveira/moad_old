@@ -4,7 +4,7 @@ library(nsga2R)
 ################################ Constants ################################
 
 TOPN = 10
-address <- "~/Documents/experimento_doutorado/"
+address <- "~/Documentos/experimento_doutorado/"
 
 ################################ Data Load ################################
 
@@ -64,6 +64,12 @@ data.test <- fread(paste0(address,"bases de dados/experimento/LFM_test.txt"),
                     header = TRUE)
 data.test = as.data.frame(data.test)
 
+genre.centroids <- fread(paste0(address,"bases de dados/experimento/user.history.centroids.txt"), 
+                         sep = ",", 
+                         verbose = TRUE,
+                         header = TRUE)
+genre.centroids = as.data.frame(genre.centroids)
+
 ################################ OBJECTIVE FUNCTION ################################
 
 # This function will be executed for a user, with specific data.test, specified aspects to diversify and a determined 
@@ -76,18 +82,27 @@ multi.objective = function(list.elements.index){
    n = length(aspects.to.diversify)
    df = artist.data.new[artist.data.new$Artist %in% list.elements$artist,]
    sum.ild = 0
+   start.time <- Sys.time()
    for(i in aspects.to.diversify){
      df.aspect = df[(aspects[[i]])]
      sum.ild = sum.ild + ILD(data = df.aspect, similarity.function = similarity.functions[[i]])
    }
+   end.time <- Sys.time()
+   time.taken <- end.time - start.time
+   time.taken
    y1 = (sum.ild / n)
    
    sum.dlh = 0
+   start.time <- Sys.time()
    for(i in aspects.not.to.diversify){
      df.aspect = df[(aspects[[i]])]
+     start.time <- Sys.time()
      sum.dlh = sum.dlh + DLH(data = df.aspect, history = data.train.user[(aspects[[i]])], distance.function = distance.functions[[i]])
    }
-   y2 = 1 -(sum.dlh / length(aspects.not.to.diversify))
+   end.time <- Sys.time()
+   time.taken <- end.time - start.time
+   time.taken
+   y2 = (sum.dlh / length(aspects.not.to.diversify))
    return(c(y1, y2))
 }
 
@@ -110,8 +125,8 @@ distance.functions[[3]] <- distance.function.locality; distance.functions[[4]] <
 
 #setup
 # aspects: 1 = "Contemporaneity", 2 = "Gender", 3 = "Locality", 4 = "Genre")
-aspects.to.diversify = c(1,2,3)
-aspects.not.to.diversify = c(4)
+aspects.to.diversify = c(1)
+aspects.not.to.diversify = c(2,3,4)
 
 start.time <- Sys.time()
 users = unique(ubcf.top10$user)
@@ -125,18 +140,24 @@ for(u in users){
 
   data.train.user = artist.data[artist.data$Artist %in% artist.data.listenned,]
   
-  results1 <- nsga2R.altered.random(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
-                    upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
-                    generations=10, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
-  results2 <- nsga2R.altered(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
-                   upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
-                   generations=10, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3,
-                   ubcf.index, td.index)
-
+  start.time <- Sys.time()
+  # results <- nsga2R.altered.random(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
+  #                   upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
+  #                   generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1,MuDistIdx=3)
+  # 
+  
+  results <- nsga2R.altered(fn=multi.objective, varNo=TOPN, objDim=2, lowerBounds=rep(1,TOPN),
+              upperBounds=rep(nrow(artist.data.new),TOPN), popSize=10, tourSize=2,
+              generations=20, cprob=0.9, XoverDistIdx=20, mprob=0.1, MuDistIdx=3,
+              ubcf.index, td.index)
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  time.taken
+  
   df = bind_cols(as.data.frame(rep(u,TOPN)),
                  as.data.frame(artist.data.new[results$parameters[10,],"Artist"]))
   fwrite(df,
-         paste0(address,"bases de dados/experimento/sample1000.nsga.first.top10.div123.pop10.gen10.txt"),
+         paste0(address,"bases de dados/experimento/sample1000.nsga.top10.div1.pop10.gen20.txt"),
          col.names = FALSE, row.names = FALSE, quote = TRUE, append = TRUE)
 }
 end.time <- Sys.time()

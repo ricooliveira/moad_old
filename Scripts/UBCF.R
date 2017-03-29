@@ -19,7 +19,14 @@ LFM.artists.available <- fread(paste0(address,"bases de dados/experimento/LFM.ar
 
 # Spliting LFM data in train and test data (80% / 20%)
 
+# Trying to decrease user's history eliminating artists listenned less than 10 times
+teste = group_by(LFM.artists.available,`user-id`,`artist-name`)
+teste = summarise(teste,total = n())
+teste = teste[which(teste$total >= 10),]
+LFM.artists.available = inner_join(LFM.artists.available, teste, by = c("user-id", "artist-name"))
+
 LFM.artists.available = LFM.artists.available[order(LFM.artists.available$`user-id`, LFM.artists.available$timestamp),]
+
 percent.train = 0.8
 
 LFM.train = data.frame()
