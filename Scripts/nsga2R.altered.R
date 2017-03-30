@@ -9,6 +9,7 @@ nsga2R.altered = function (fn, varNo, objDim, lowerBounds = rep(-Inf, varNo),
   cat("\n")
   parent <- t(sapply(1:(popSize - 2), function(u) array(runif(length(lowerBounds), 
                                                         lowerBounds, upperBounds))))
+  parent <- floor(parent)
   parent = rbind(ubcf.index, td.index, parent)
   parent <- cbind(parent, t(apply(parent, 1, fn)))
   cat("ranking the initial population")
@@ -38,7 +39,7 @@ nsga2R.altered = function (fn, varNo, objDim, lowerBounds = rep(-Inf, varNo),
     matingPool <- tournamentSelection(parent, popSize, tourSize)
     cat("crossover operator")
     cat("\n")
-    childAfterX <- boundedSBXover(matingPool[, 1:varNo], 
+    childAfterX <- boundedSBXover.altered(matingPool[, 1:varNo], 
                                   lowerBounds, upperBounds, cprob, XoverDistIdx)
     cat("mutation operator")
     cat("\n")
@@ -111,6 +112,7 @@ nsga2R.altered.random = function (fn, varNo, objDim, lowerBounds = rep(-Inf, var
   cat("\n")
   parent <- t(sapply(1:(popSize), function(u) array(runif(length(lowerBounds), 
                                                               lowerBounds, upperBounds))))
+  parent <- floor(parent)
   #parent = rbind(ubcf.index, td.index, parent)
   parent <- cbind(parent, t(apply(parent, 1, fn)))
   cat("ranking the initial population")
@@ -251,3 +253,110 @@ fastNonDominatedSorting.altered = function (inputData)
   }
   return(rnkList)
 }
+
+boundedSBXover.altered =function (parent_chromosome, lowerBounds, upperBounds, cprob, 
+          mu) 
+{
+  popSize = nrow(parent_chromosome)
+  varNo = ncol(parent_chromosome)
+  child <- parent_chromosome
+  p <- 1
+  for (i in 1:(popSize/2)) {
+    if (runif(1) < cprob) {
+      for (j in 1:varNo) {
+        parent1 <- child[p, j]
+        parent2 <- child[p + 1, j]
+        yl <- lowerBounds[j]
+        yu <- upperBounds[j]
+        rnd = runif(1)
+        if (rnd <= 0.5) {
+          if (abs(parent1 - parent2) > 1e-06) {
+            if (parent2 > parent1) {
+              y2 <- parent2
+              y1 <- parent1
+            }
+            else {
+              y2 <- parent1
+              y1 <- parent2
+            }
+            if ((y1 - yl) > (yu - y2)) {
+              beta = 1 + (2 * (yu - y2)/(y2 - y1))
+            }
+            else {
+              beta = 1 + (2 * (y1 - yl)/(y2 - y1))
+            }
+            alpha = 2 - (beta^(-(1 + mu)))
+            rnd = runif(1)
+            if (rnd <= 1/alpha) {
+              alpha = alpha * rnd
+              betaq = sign(alpha)*abs(alpha)^(1/(1 + mu))
+            }
+            else {
+              alpha = alpha * rnd
+              alpha = 1/(2 - alpha)
+              
+              betaq = sign(alpha)*abs(alpha)^(1/(1 + mu))
+            }
+            child1 = 0.5 * ((y1 + y2) - betaq * (y2 - 
+                                                   y1))
+            child2 = 0.5 * ((y1 + y2) + betaq * (y2 - 
+                                                   y1))
+          }
+          else {
+            betaq = 1
+            y1 = parent1
+            y2 = parent2
+            child1 = 0.5 * ((y1 + y2) - betaq * (y2 - 
+                                                   y1))
+            child2 = 0.5 * ((y1 + y2) + betaq * (y2 - 
+                                                   y1))
+          }
+          teste <- tryCatch({
+            if (child1 > yu) {
+              child1 = yu
+            }
+          },
+          error = function(err) {
+            print(paste("i",i))
+            print(paste("j",j))
+            print(paste("p",p))
+            print(paste("y1",y1))
+            print(paste("y2",y2))
+            print(paste("rnd",rnd))
+            print(paste("alpha",alpha))
+            print(paste("betaq",betaq))
+            print(parent_chromosome)
+            print(child)
+            #fwrite(parent_chromosome,"~/Documentos/experimento_doutorado/teste.txt",row.names = F,col.names = F)
+            }
+          )
+          # if (is.na(child1)){
+          #   print("breakpoint")
+          # }
+          if (child1 > yu) {
+            print("aqui")
+            child1 = yu
+          }
+          else if (child1 < yl) {
+            child1 = yl
+          }
+          if (child2 > yu) {
+            child2 = yu
+          }
+          else if (child2 < yl) {
+            child2 = yl
+          }
+        }
+        else {
+          child1 = parent1
+          child2 = parent2
+        }
+        child[p, j] <- child1
+        child[p + 1, j] <- child2
+      }
+    }
+    p <- p + 2
+  }
+  return(child)
+}
+

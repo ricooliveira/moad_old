@@ -124,8 +124,8 @@ distance.functions[[3]] <- distance.function.locality; distance.functions[[4]] <
 
 #setup
 # aspects: 1 = "Contemporaneity", 2 = "Gender", 3 = "Locality", 4 = "Genre")
-aspects.to.diversify = c(4)
-aspects.not.to.diversify = c(1,2,3)
+aspects.to.diversify = c(1)
+aspects.not.to.diversify = c(2,3,4)
 
 start.time <- Sys.time()
 users = unique(ubcf.top10$user)
@@ -156,10 +156,15 @@ for(u in users){
   nondominated = (fastNonDominatedSorting(results$objectives))[[1]]
   best.solution = which.max(results$objectives[nondominated,1]+results$objectives[nondominated,2])
   
-  df = bind_cols(as.data.frame(rep(u,TOPN)),
-                 as.data.frame(artist.data.new[results$parameters[nondominated,][best.solution,],"Artist"]))
+  if(length(nondominated) == 1){
+    df = bind_cols(as.data.frame(rep(u,TOPN)),
+                 as.data.frame(artist.data.new[as.vector(t(as.data.frame(t(results$parameters[nondominated,]))[best.solution,])),"Artist"]))
+  }else{
+    df = bind_cols(as.data.frame(rep(u,TOPN)),
+                   as.data.frame(artist.data.new[results$parameters[nondominated,][best.solution,],"Artist"]))
+  }
   fwrite(df,
-         paste0(address,"bases de dados/experimento/resultados/sample1000.nsga.top10.div4.pop10.gen20.txt"),
+         paste0(address,"bases de dados/experimento/resultados/sample1000.nsga.top10.div1.pop10.gen20.txt"),
          col.names = FALSE, row.names = FALSE, quote = TRUE, append = TRUE)
 }
 end.time <- Sys.time()
